@@ -14,6 +14,7 @@ enum class TokenType {
     GT, GEQ, LT, LEQ, EQ, NEQ,
     ASSIGN,
 
+    KEY_TRUE, KEY_FALSE,
     KEY_IF, KEY_WHILE, KEY_BREAK, KEY_CONTINUE,
     KEY_PANIC, KEY_PRINT,
 
@@ -26,6 +27,9 @@ data class Token(val type: TokenType, val text: String) {
 
     companion object {
         // common tokens
+        @JvmStatic val TRUE = Token(TokenType.KEY_TRUE, "true")
+        @JvmStatic val FALSE = Token(TokenType.KEY_FALSE, "false")
+
         @JvmStatic val IF = Token(TokenType.KEY_IF, "if")
         @JvmStatic val WHILE = Token(TokenType.KEY_WHILE, "while")
         @JvmStatic val CONTINUE = Token(TokenType.KEY_CONTINUE, "continue")
@@ -68,7 +72,56 @@ data class Token(val type: TokenType, val text: String) {
     }
 }
 
-data class TokenStream(val content: List<Token>, var offset: Int = 0)
+data class TokenStream(val content: List<Token>, var offset: Int = 0) {
+    val size = content.size
+
+    fun hasNext() = offset < size
+
+    fun next() = content[offset++]
+    fun peek() = content[offset]
+
+    fun skip() { offset++ }
+    fun skip(n: Int) { offset += n }
+    fun reset() { offset = 0 }
+    fun reset(offset: Int) { this.offset = offset }
+
+    companion object {
+        @JvmStatic fun TokenStream.expect(type: TokenType): Token {
+            val t = next()
+            if(t.type != type) throw IllegalStateException("Expected $type, got $t")
+            return t
+        }
+        @JvmStatic fun TokenStream.expect(text: String): Token {
+            val t = next()
+            if(t.text != text) throw IllegalStateException("Expected $text, got $t")
+            return t
+        }
+
+        @JvmStatic fun TokenStream.test(type: TokenType): Boolean {
+            return peek().type == type
+        }
+        @JvmStatic fun TokenStream.test(text: String): Boolean {
+            return peek().text == text
+        }
+
+        @JvmStatic fun TokenStream.testAndSkip(type: TokenType): Boolean {
+            val t = peek()
+            if(t.type == type) {
+                skip()
+                return true
+            }
+            return false
+        }
+        @JvmStatic fun TokenStream.testAndSkip(text: String): Boolean {
+            val t = peek()
+            if(t.text == text) {
+                skip()
+                return true
+            }
+            return false
+        }
+    }
+}
 
 object Lexer {
     fun lex(source: String): TokenStream {
@@ -179,6 +232,8 @@ object Lexer {
         "break" -> Token.BREAK
         "panic" -> Token.PANIC
         "print" -> Token.PRINT
+        "true" -> Token.TRUE
+        "false" -> Token.FALSE
         else -> token
     }
 

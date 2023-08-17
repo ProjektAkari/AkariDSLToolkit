@@ -11,8 +11,6 @@ class Lexical {
                 send 1.0 to player Maple
             }
             """.trimIndent()
-        println(source)
-        println(source.length)
         val tokens = Lexer.lex(source)
         println(tokens.content)
     }
